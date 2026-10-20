@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蠍瓜網 - 整合平台</title>
+    <style>
+        :root {
+            --primary-color: #db2777;    /* 櫻花深粉紅 (按鈕/重點用) */
+            --primary-hover: #be185d;    /* 滑鼠懸停時的深粉 */
+            --bg-color: #fff1f5;         /* 極柔和的淡粉白背景 */
+            --card-bg: #ffffff;          /* 純白卡片區塊 */
+            --text-color: #4c1d30;       /* 深栗紫紅色 (文字清晰好讀) */
+            --text-muted: #9d5c81;       /* 次要文字 (柔和的粉紫灰) */
+            --border-color: #fbcfe8;     /* 淡淡的櫻花粉邊框 */
+            --danger-color: #e11d48;     /* 刪除/警告紅色 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 開場載入畫面 (Splash Screen) */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease;
+        }
+
+        .splash-content {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(219, 39, 119, 0.08);
+        }
+
+        .splash-logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .splash-desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* 進度條外框 */
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #fff1f5;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        /* 進度條本體 */
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            transition: width 0.1s linear;
+        }
+
+        .progress-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        /* 導覽列 */
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(219, 39, 119, 0.05);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary-color);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn-outline:hover {
+            background-color: #fdf2f8;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        /* 主要內容區 */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            flex: 1;
+            width: 100%;
+        }
+
+        .page-content {
+            display: none;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            color: var(--text-color);
+        }
+
+        /* 表格與卡片樣式 */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(219, 39, 119, 0.04);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .buy-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .buy-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* 彈跳視窗 Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(76, 29, 48, 0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(219, 39, 119, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: #fff5f8;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: var(--primary-color);
+        }
+
+        /* 頁尾 */
+        footer {
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 開場載入畫面 -->
+    <div id="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">🌸 蠍瓜網</div>
+            <div class="splash-desc">系統正在載入資源，請稍候...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+    </div>
+
+    <!-- 頂部導覽列 -->
+    <header>
+        <div class="nav-container">
+            <div class="logo" onclick="showPage('home')">
+                <span>🌸 蠍瓜網</span>
+            </div>
+            <div class="nav-links">
+                <a onclick="showPage('home')" class="active">首頁</a>
+                <a onclick="showPage('shop')">商店</a>
+                <a onclick="showPage('blog')">文章</a>
+                <a onclick="showPage('services')">服務與下載</a>
+                <a onclick="showPage('admin-panel')" id="btnAdmin" style="display:none; color: var(--primary-color);">管理後台</a>
+            </div>
+            <div class="auth-buttons" id="authSection">
+                <div id="userStatus" style="display:none; gap: 10px; align-items: center;">
+                    <span>Hi, <b id="welcomeName"></b></span>
+                    <button class="btn btn-outline" onclick="handleLogout()" id="btnLogout">登出</button>
+                </div>
+                <button class="btn btn-outline" onclick="openModal('loginModal')" id="btnLogin">登入</button>
+                <button class="btn btn-primary" onclick="openModal('registerModal')" id="btnRegister">註冊</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要內容 -->
+    <main>
+        <!-- 首頁 -->
+        <div id="home" class="page-content active">
+            <div class="card">
+                <h1>歡迎來到 蠍瓜網！</h1>
+                <p style="color: var(--text-muted); line-height: 1.6;">這是一個整合 Minecraft 伺服器商品、實用軟體下載及社群文章的綜合平台。請點擊上方導覽列開始瀏覽。</p>
+            </div>
+        </div>
+
+        <!-- 商店頁面 -->
+        <div id="shop" class="page-content">
+            <h1>伺服器與周邊商店</h1>
+            
+            <div class="card">
+                <h2>🧨 Minecraft 煙火特區</h2>
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="mc-firework-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>🎮 Minecraft 其他商品</h2>
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="mc-other-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>🛒 一般周邊商品</h2>
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="shop-goods-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>🕹️ 其他遊戲商品</h2>
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="other-games-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 文章頁面 -->
+        <div id="blog" class="page-content">
+            <h1>最新公告與文章</h1>
+            <div id="blog-container"></div>
+        </div>
+
+        <!-- 服務與下載頁面 -->
+        <div id="services" class="page-content">
+            <h1>服務與檔案下載</h1>
+            <div id="service-container"></div>
+        </div>
+
+        <!-- 管理員後台 -->
+        <div id="admin-panel" class="page-content">
+            <h1>管理員後台控制面板</h1>
+            
+            <div class="card">
+                <h2>📦 訂單管理</h2>
+                <table>
+                    <thead><tr><th>玩家 ID / 會員</th><th>商品名稱</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="admin-orders-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>➕ 商品上架</h2>
+                <form onsubmit="handleAddProduct(event)">
+                    <div class="form-group">
+                        <label>商品分類</label>
+                        <select id="prodLocation" onchange="renderAdminProductList()">
+                            <option value="mc-firework">Minecraft 煙火特區</option>
+                            <option value="mc-other">Minecraft 其他商品</option>
+                            <option value="shop-goods">一般周邊商品</option>
+                            <option value="other-games">其他遊戲商品</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>商品名稱</label><input type="text" id="prodName" required></div>
+                    <div class="form-group"><label>商品描述</label><input type="text" id="prodDesc" required></div>
+                    <div class="form-group"><label>價格</label><input type="text" id="prodPrice" required></div>
+                    <button type="submit" class="btn btn-primary">上架商品</button>
+                </form>
+
+                <h3 style="margin-top: 20px; color: var(--text-color);">現有商品列表</h3>
+                <select id="adminProdCategorySelect" onchange="renderAdminProductList()" style="margin: 10px 0; padding: 6px; background: #fff5f8; color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px;">
+                    <option value="mc-firework">Minecraft 煙火特區</option>
+                    <option value="mc-other">Minecraft 其他商品</option>
+                    <option value="shop-goods">一般周邊商品</option>
+                    <option value="other-games">其他遊戲商品</option>
+                </select>
+                <table>
+                    <thead><tr><th>名稱</th><th>描述</th><th>價格</th><th>刪除</th></tr></thead>
+                    <tbody id="admin-products-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>✍️ 發布文章</h2>
+                <form onsubmit="handleAddPost(event)">
+                    <div class="form-group"><label>文章標題</label><input type="text" id="postTitle" required></div>
+                    <div class="form-group"><label>文章內容</label><textarea id="postContent" rows="4" required></textarea></div>
+                    <button type="submit" class="btn btn-primary">發布文章</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>🛠️ 新增服務與下載</h2>
+                <form onsubmit="handleAddService(event)">
+                    <div class="form-group"><label>服務名稱</label><input type="text" id="servName" required></div>
+                    <div class="form-group"><label>備註說明</label><textarea id="servNote" rows="2" required></textarea></div>
+                    <div class="form-group"><label>檔案名稱/網址 (URL)</label><input type="text" id="servFileUrl" required></div>
+                    <button type="submit" class="btn btn-primary">新增服務</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- 登入 Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('loginModal')">&times;</button>
+            <h2>會員登入</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group"><label>帳號 (Minecraft ID / 使用者名稱)</label><input type="text" id="loginName" required></div>
+                <div class="form-group"><label>密碼</label><input type="password" id="loginPassword" required></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">登入</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 註冊 Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('registerModal')">&times;</button>
+            <h2>會員註冊</h2>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group"><label>使用者名稱</label><input type="text" id="regName" required></div>
+                <div class="form-group"><label>電子郵件</label><input type="email" id="regEmail" required></div>
+                <div class="form-group"><label>密碼</label><input type="password" id="regPassword" required></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">註冊</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Minecraft 購買 ID 確認 Modal -->
+    <div id="mcConfirmModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('mcConfirmModal')">&times;</button>
+            <h2>Minecraft 購買確認</h2>
+            <p style="color: var(--text-muted); margin-bottom: 15px; font-size: 14px;">此為 Minecraft 相關商品，請輸入您的遊戲 ID 以利發貨。</p>
+            <form onsubmit="handleConfirmMcBuy(event)">
+                <div class="form-group"><label>輸入 Minecraft ID</label><input type="text" id="mcId1" required></div>
+                <div class="form-group"><label>再次確認 Minecraft ID</label><input type="text" id="mcId2" required></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">確認送出訂單</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 頁尾 -->
+    <footer>
+        <p>&copy; 2026 蠍瓜網 All Rights Reserved.</p>
+    </footer>
+
+    <!-- JavaScript 邏輯 -->
+    <script>
+        let globalData = { users: [], orders: [], posts: [], services: [], products: {} };
+        let pendingPurchaseItem = null;
+
+        // 開場載入畫面計時器 (設定總共約 7 秒，可自行在總毫秒數調整)
+        function initSplashScreen() {
+            const splashScreen = document.getElementById('splash-screen');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            let currentPercent = 0;
+            // 7 秒內跑完 100% (總共 7000 毫秒，每 70 毫秒更新一次 = 100 次)
+            const totalDuration = 7000; 
+            const intervalTime = 70;
+            const increment = 100 / (totalDuration / intervalTime);
+
+            let timer = setInterval(() => {
+                currentPercent += increment;
+                if (currentPercent >= 100) {
+                    currentPercent = 100;
+                    clearInterval(timer);
+                    // 跑完後淡出隱藏
+                    splashScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        splashScreen.style.display = 'none';
+                    }, 600); // 對應 CSS 的 transition 時間
+                }
+                progressBar.style.width = currentPercent + '%';
+                progressText.innerText = Math.floor(currentPercent) + '%';
+            }, intervalTime);
+        }
+
+        async function fetchAllData() {
+            try {
+                let res = await fetch('/api/data');
+                globalData = await res.json();
+                if (!globalData.users) globalData.users = [];
+                refreshUI();
+            } catch (e) {
+                console.error("無法同步伺服器資料", e);
+            }
+        }
+
+        function getCurrentUser() { return localStorage.getItem('scorki_current_user'); }
+        function setCurrentUser(name) {
+            if (name) localStorage.setItem('scorki_current_user', name);
+            else localStorage.removeItem('scorki_current_user');
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            const user = getCurrentUser();
+            const userStatus = document.getElementById('userStatus');
+            const btnLogin = document.getElementById('btnLogin');
+            const btnRegister = document.getElementById('btnRegister');
+            const btnLogout = document.getElementById('btnLogout');
+            const btnAdmin = document.getElementById('btnAdmin');
+
+            if (user) {
+                document.getElementById('welcomeName').innerText = user;
+                userStatus.style.display = 'flex';
+                btnLogin.style.display = 'none';
+                btnRegister.style.display = 'none';
+                btnLogout.style.display = 'block';
+                btnAdmin.style.display = (user === 'admin') ? 'block' : 'none';
+            } else {
+                userStatus.style.display = 'none';
+                btnLogin.style.display = 'block';
+                btnRegister.style.display = 'block';
+                btnLogout.style.display = 'none';
+                btnAdmin.style.display = 'none';
+            }
+        }
+
+        function refreshUI() {
+            updateAuthUI();
+            renderAllProductTables();
+            renderBlog();
+            renderServices();
+        }
+
+        function renderAllProductTables() {
+            ['mc-firework', 'mc-other', 'shop-goods', 'other-games'].forEach(cat => {
+                const tbody = document.getElementById(cat + '-tbody');
+                if (!tbody) return;
+                const items = (globalData.products && globalData.products[cat]) || [];
+                if (items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#9d5c81;">（目前尚無商品）</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = items.map(item => `
+                    <tr><td><b>${item.name}</b></td><td>${item.desc}</td><td>${item.price}</td><td><button class="buy-btn" onclick="buyItem('${cat}', '${item.name}', '${item.price}')">購買</button></td></tr>
+                `).join('');
+            });
+        }
+
+        function renderBlog() {
+            const container = document.getElementById('blog-container');
+            if (!container) return;
+            container.innerHTML = (globalData.posts || []).map(p => `
+                <div class="card"><h3>${p.title}</h3><p style="color:var(--text-muted); font-size:12px; margin:5px 0 10px 0;">發布日期：${p.date}</p><p>${p.content.replace(/\n/g, '<br>')}</p></div>
+            `).join('');
+        }
+
+        function renderServices() {
+            const container = document.getElementById('service-container');
+            if (!container) return;
+            container.innerHTML = (globalData.services || []).map(s => `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><h3>🛠️ ${s.name}</h3><p style="color:var(--text-muted); margin-top:5px;">${s.note.replace(/\n/g, '<br>')}</p></div>
+                    <a href="/${s.url}" class="btn btn-primary" download>下載檔案</a>
+                </div>
+            `).join('');
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                let res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                let result = await res.json();
+                
+                if (res.ok) {
+                    alert('註冊成功！請登入。');
+                    closeModal('registerModal');
+                    await fetchAllData();
+                } else {
+                    alert(result.message || '註冊失敗');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('連線伺服器失敗');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('loginName').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (name === 'admin' && password === 'admin') {
+                alert('管理員登入成功！');
+                setCurrentUser('admin');
+                closeModal('loginModal');
+                return;
+            }
+
+            let validUser = (globalData.users || []).find(u => u.name === name && u.password === password);
+            
+            if (validUser) {
+                alert('登入成功！');
+                setCurrentUser(validUser.name);
+                closeModal('loginModal');
+            } else {
+                alert('帳號或密碼錯誤！');
+            }
+        }
+
+        function handleLogout() { setCurrentUser(null); showPage('home'); }
+
+        function buyItem(category, itemName, price) {
+            if (!getCurrentUser()) { alert('請先登入！'); openModal('loginModal'); return; }
+            if (category.startsWith('mc-')) {
+                pendingPurchaseItem = { itemName, price };
+                openModal('mcConfirmModal');
+            } else {
+                sendOrder({ mcId: '(一般會員: ' + getCurrentUser() + ')', itemName, price });
+            }
+        }
+
+        async function sendOrder(orderData) {
+            await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+            alert('訂單已成立並送至後台！');
+            fetchAllData();
+        }
+
+        async function handleConfirmMcBuy(e) {
+            e.preventDefault();
+            if (document.getElementById('mcId1').value !== document.getElementById('mcId2').value) {
+                alert('兩次 ID 不一致！'); return;
+            }
+            if (pendingPurchaseItem) {
+                await sendOrder({ mcId: document.getElementById('mcId1').value.trim(), itemName: pendingPurchaseItem.itemName, price: pendingPurchaseItem.price });
+                closeModal('mcConfirmModal');
+                pendingPurchaseItem = null;
+            }
+        }
+
+        async function renderAdminOrders() {
+            let res = await fetch('/api/orders');
+            let orders = await res.json();
+            document.getElementById('admin-orders-tbody').innerHTML = orders.length === 0 ? `<tr><td colspan="4" style="text-align:center; color:#9d5c81;">（尚無訂單）</td></tr>` :
+                orders.map((o, i) => `<tr><td><b>${o.mcId}</b></td><td>${o.itemName}</td><td>${o.price}</td><td><button class="btn btn-danger" style="padding:4px 8px;" onclick="deleteOrder(${i})">🗑️</button></td></tr>`).join('');
+        }
+
+        async function deleteOrder(index) {
+            await fetch('/api/orders', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index }) });
+            renderAdminOrders();
+        }
+
+        async function renderAdminProductList() {
+            let cat = document.getElementById('adminProdCategorySelect').value;
+            let res = await fetch(`/api/products/${cat}`);
+            let items = await res.json();
+            document.getElementById('admin-products-tbody').innerHTML = items.length === 0 ? `<tr><td colspan="4" style="text-align:center; color:#9d5c81;">（尚無商品）</td></tr>` :
+                items.map((item, i) => `<tr><td><b>${item.name}</b></td><td>${item.desc}</td><td>${item.price}</td><td><button class="btn btn-danger" style="padding:4px 8px;" onclick="deleteProduct('${cat}', ${i})">🗑️</button></td></tr>`).join('');
+        }
+
+        async function deleteProduct(cat, index) {
+            await fetch(`/api/products/${cat}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index }) });
+            renderAdminProductList();
+            fetchAllData();
+        }
+
+        async function handleAddProduct(e) {
+            e.preventDefault();
+            let cat = document.getElementById('prodLocation').value;
+            let item = { name: document.getElementById('prodName').value, desc: document.getElementById('prodDesc').value, price: document.getElementById('prodPrice').value };
+            await fetch(`/api/products/${cat}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) });
+            alert('商品上架成功！');
+            fetchAllData();
+            renderAdminProductList();
+        }
+
+        async function handleAddPost(e) {
+            e.preventDefault();
+            let post = { title: document.getElementById('postTitle').value, date: new Date().toISOString().split('T')[0], content: document.getElementById('postContent').value };
+            await fetch('/api/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(post) });
+            alert('文章發布成功！');
+            fetchAllData();
+        }
+
+        async function handleAddService(e) {
+            e.preventDefault();
+            let serv = { name: document.getElementById('servName').value, note: document.getElementById('servNote').value, url: document.getElementById('servFileUrl').value };
+            await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serv) });
+            alert('服務新增成功！');
+            fetchAllData();
+        }
+
+        function showPage(pageId) {
+            if (pageId === 'admin-panel') {
+                if (getCurrentUser() !== 'admin') { alert('無權限'); return; }
+                renderAdminOrders();
+                renderAdminProductList();
+            }
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+            event && event.target && event.target.tagName === 'A' && event.target.classList.add('active');
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        window.onload = function() {
+            initSplashScreen(); // 啟動開場載入動畫
+            fetchAllData();
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        };
+    </script>
+</body>
+</html>

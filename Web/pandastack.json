@@ -1,0 +1,6 @@
+{
+  "type": "container",
+  "name": "flask-app",
+  "language": "python",
+  "startCommand": "gunicorn app:app --bind 0.0.0.0:8000"
+}

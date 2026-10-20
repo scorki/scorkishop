@@ -1,0 +1,95 @@
+{
+    "users": [
+        {
+            "name": "test",
+            "email": "test@scorki.tw",
+            "password": "scrypt:32768:8:1$cRCj6v8sceHpPSN8$4377353e0ee7be57672035c2555ff951b2ab2194d0c826dd53a09d3d0a984313dbbc9857e4d2da2577d1f1b5d1000d97645304641ac5cabfe5df4ad44a4f1310"
+        },
+        {
+            "name": "scorki",
+            "email": "scorki@gmail.com",
+            "password": "0123456789"
+        },
+        {
+            "name": "scorkitwtw",
+            "email": "scorki@scorki.tw",
+            "password": "scrypt:32768:8:1$VDZTjPCiiOSdsv67$3db6db604447a86a73bf503b8569523667b19b5210a0216a0088f49f9dc342461becf86252479aab616f500965a0f359654691439dc735afc5037a364366ab5c"
+        }
+    ],
+    "orders": [],
+    "posts": [
+        {
+            "title": "聯絡我們-Contact Us",
+            "date": "2026-08-20",
+            "content": "Discord:scorki_tw_19024\nEmail:scorki.service@gmail.com\nInstagram:scorki0916\nThreads:Same_As_My_Instagram_Account\n"
+        },
+        {
+            "title": "歡迎來到蠍瓜網",
+            "date": "2026-06-07",
+            "content": "這是蠍瓜網的第一篇公告，歡迎所有玩家與訪客！"
+        }
+    ],
+    "services": [
+        {
+            "name": "蠍瓜伺服器客戶端工具",
+            "note": "內含優化模組與快捷連線設定，請直接下載執行。",
+            "url": "server.exe"
+        },
+        {
+            "name": "Nothing!",
+            "note": "Nothing!",
+            "url": "nothing.exe"
+        },
+        {
+            "name": "ScorkiBotV2",
+            "note": "All Rights Reserved \n版權所有 請勿侵權",
+            "url": "https://scorki.pse.is/downloadv2/"
+        },
+        {
+            "name": "ScorkiBotV2",
+            "note": "All Rights Reserved \n版權所有 請勿侵權",
+            "url": "新文字文件.txt"
+        }
+    ],
+    "products": {
+        "mc-firework": [
+            {
+                "name": "煙火(64x)",
+                "desc": "飛行時間(III)煙火，優惠!",
+                "price": "2300伺服幣"
+            },
+            {
+                "name": "煙火(640x)",
+                "desc": "飛行時間(III)煙火，優惠!",
+                "price": "19000伺服幣"
+            },
+            {
+                "name": "煙火(6400x)",
+                "desc": "飛行時間(III)煙火，優惠!",
+                "price": "170000伺服幣"
+            }
+        ],
+        "mc-other": [
+            {
+                "name": "界符殼",
+                "desc": "讚",
+                "price": "2300伺服幣"
+            },
+            {
+                "name": "自訂",
+                "desc": "自訂商品--聯絡我們",
+                "price": "1TWD"
+            }
+        ],
+        "shop-goods": [
+            {
+                "name": "2026新后 -- 矛巨山蟻 (Camponotus carin tipuna) 新后1-11工",
+                "desc": "2026新后 -- 矛巨山蟻 (Camponotus carin tipuna) 新后1-10工 北部產地 2026",
+                "price": "TWD$200",
+                "paypalPrice": "200",
+                "paypalUrl": "https://www.paypal.com/ncp/payment/N22YTZ6DG98KS"
+            }
+        ],
+        "other-games": []
+    }
+}

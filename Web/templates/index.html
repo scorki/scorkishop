@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蠍瓜網 - 整合平台</title>
+    <style>
+        :root {
+            --primary-color: #db2777;    /* 櫻花深粉紅 (按鈕/重點用) */
+            --primary-hover: #be185d;    /* 滑鼠懸停時的深粉 */
+            --bg-color: #fff1f5;         /* 極柔和的淡粉白背景 */
+            --card-bg: #ffffff;          /* 純白卡片區塊 */
+            --text-color: #4c1d30;       /* 深栗紫紅色 (文字清晰好讀) */
+            --text-muted: #9d5c81;       /* 次要文字 (柔和的粉紫灰) */
+            --border-color: #fbcfe8;     /* 淡淡的櫻花粉邊框 */
+            --danger-color: #e11d48;     /* 刪除/警告紅色 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 開場載入畫面 (Splash Screen) */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease;
+        }
+
+        .splash-content {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(219, 39, 119, 0.08);
+        }
+
+        .splash-logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .splash-desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* 進度條外框 */
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #fff1f5;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        /* 進度條本體 */
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            transition: width 0.1s linear;
+        }
+
+        .progress-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        /* 導覽列 */
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(219, 39, 119, 0.05);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary-color);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn-outline:hover {
+            background-color: #fdf2f8;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        /* 主要內容區 */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            flex: 1;
+            width: 100%;
+        }
+
+        .page-content {
+            display: none;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            color: var(--text-color);
+        }
+
+        /* 表格與卡片樣式 */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(219, 39, 119, 0.04);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .stat-item strong {
+            display: block;
+            color: var(--primary-color);
+            font-size: 24px;
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .buy-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .buy-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* 彈跳視窗 Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(76, 29, 48, 0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(219, 39, 119, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: #fff5f8;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: var(--primary-color);
+        }
+
+        /* 頁尾 */
+        footer {
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 開場載入畫面 -->
+    <div id="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">🌸 蠍瓜網</div>
+            <div class="splash-desc">系統正在載入資源，請稍候...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+    </div>
+
+    <!-- 頂部導覽列 -->
+    <header>
+        <div class="nav-container">
+            <div class="logo" onclick="showPage('home')">
+                <span>🌸 蠍瓜網</span>
+            </div>
+            <div class="nav-links">
+                <a onclick="showPage('home')" class="active">首頁</a>
+                <a onclick="showPage('shop')">商店</a>
+                <a onclick="showPage('favorites')">收藏清單 <span id="favoriteCount">0</span></a>
+                <a onclick="showPage('my-orders')" id="btnMyOrders" style="display:none;">我的訂單</a>
+                <a onclick="showPage('blog')">文章</a>
+                <a onclick="showPage('services')">服務與下載</a>
+                <a onclick="showPage('admin-panel')" id="btnAdmin" style="display:none; color: var(--primary-color);">管理後台</a>
+            </div>
+            <div class="auth-buttons" id="authSection">
+                <div id="userStatus" style="display:none; gap: 10px; align-items: center;">
+                    <span>Hi, <b id="welcomeName"></b></span>
+                    <button class="btn btn-outline" onclick="handleLogout()" id="btnLogout">登出</button>
+                </div>
+                <button class="btn btn-outline" onclick="openModal('loginModal')" id="btnLogin">登入</button>
+                <button class="btn btn-primary" onclick="openModal('registerModal')" id="btnRegister">註冊</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要內容 -->
+    <main>
+        <!-- 首頁 -->
+        <div id="home" class="page-content active">
+            <div class="card">
+                <h1>歡迎來到 蠍瓜網！</h1>
+                <p style="color: var(--text-muted); line-height: 1.6;">這是一個整合 Minecraft 伺服器商品、實用軟體下載及社群文章的綜合平台。請點擊上方導覽列開始瀏覽。</p>
+            </div>
+            <div class="stats-grid" aria-label="網站內容統計">
+                <div class="stat-item"><strong id="statProducts">0</strong><span>項商品</span></div>
+                <div class="stat-item"><strong id="statPosts">0</strong><span>篇文章</span></div>
+                <div class="stat-item"><strong id="statServices">0</strong><span>項服務與下載</span></div>
+                <div class="stat-item"><strong id="statFavorites">0</strong><span>項我的收藏</span></div>
+            </div>
+            <div class="card">
+                <h2>最新公告</h2>
+                <div id="homeLatestPost" style="color: var(--text-muted);">目前沒有公告</div>
+                <button class="btn btn-outline" style="margin-top: 12px;" onclick="showPage('blog')">查看全部文章</button>
+                <button class="btn btn-primary" style="margin-top: 12px;" onclick="showPage('shop')">前往商店</button>
+            </div>
+        </div>
+
+        <!-- 商店頁面 -->
+        <div id="shop" class="page-content">
+            <h1>伺服器與周邊商店</h1>
+            <div class="form-group" style="max-width: 520px; margin: 0 0 20px;">
+                <label for="shopSearch">搜尋商品</label>
+                <input type="search" id="shopSearch" placeholder="輸入商品名稱或說明" oninput="renderAllProductTables()">
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+                <div class="form-group" style="margin:0; min-width:220px;">
+                    <label for="shopCategory">商品分類</label>
+                    <select id="shopCategory" onchange="renderAllProductTables()">
+                        <option value="all">全部分類</option>
+                        <option value="mc-firework">Minecraft 煙火</option>
+                        <option value="mc-other">Minecraft 其他</option>
+                        <option value="shop-goods">一般周邊</option>
+                        <option value="other-games">其他遊戲</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin:0; min-width:220px;">
+                    <label for="shopSort">排序</label>
+                    <select id="shopSort" onchange="renderAllProductTables()">
+                        <option value="default">預設順序</option>
+                        <option value="name">商品名稱 A-Z</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card" id="cart-panel">
+                <h2>購物車 <small id="cartCount" style="font-size:14px; color:var(--text-muted);">0 件</small></h2>
+                <p id="cartEmpty" style="color:var(--text-muted);">購物車目前是空的。</p>
+                <table id="cartTable" style="display:none;">
+                    <thead><tr><th>商品</th><th>單價</th><th>數量</th><th>PayPal 付款連結</th><th>操作</th></tr></thead>
+                    <tbody id="cart-tbody"></tbody>
+                </table>
+                <div id="cartMcIdField" class="form-group" style="max-width:360px; margin-top:14px; display:none;">
+                    <label for="cartMcId">Minecraft ID（購物車含 Minecraft 商品時必填）</label>
+                    <input type="text" id="cartMcId" maxlength="64">
+                </div>
+                <button class="btn btn-primary" id="cartCheckoutButton" onclick="checkoutCart()" style="display:none;">送出購物車</button>
+                <div id="cart-paypal-container" style="max-width:420px; margin-top:12px;"></div>
+            </div>
+            
+            <div class="card">
+                <h2>🧨 Minecraft 煙火特區</h2>
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="mc-firework-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>🎮 Minecraft 其他商品</h2>
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="mc-other-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>🛒 一般周邊商品</h2>
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="shop-goods-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>🕹️ 其他遊戲商品</h2>
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="other-games-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="favorites" class="page-content">
+            <h1>我的收藏</h1>
+            <div class="card">
+                <table>
+                    <thead><tr><th>名稱</th><th>說明</th><th>價格</th><th>操作</th></tr></thead>
+                    <tbody id="favorites-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="my-orders" class="page-content">
+            <h1>我的訂單</h1>
+            <div class="card">
+                <table>
+                    <thead><tr><th>商品</th><th>價格</th><th>付款狀態</th><th>處理進度</th><th>建立時間</th></tr></thead>
+                    <tbody id="my-orders-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 文章頁面 -->
+        <div id="blog" class="page-content">
+            <h1>最新公告與文章</h1>
+            <div class="form-group" style="max-width: 520px; margin-bottom: 20px;">
+                <label for="blogSearch">搜尋公告</label>
+                <input type="search" id="blogSearch" placeholder="輸入標題或內容" oninput="renderBlog()">
+            </div>
+            <div id="blog-container"></div>
+        </div>
+
+        <!-- 服務與下載頁面 -->
+        <div id="services" class="page-content">
+            <h1>服務與檔案下載</h1>
+            <div id="service-container"></div>
+        </div>
+
+        <!-- 管理員後台 -->
+        <div id="admin-panel" class="page-content">
+            <h1>管理員後台控制面板</h1>
+            
+            <div class="card">
+                <h2>📦 訂單管理</h2>
+                <table>
+                    <thead><tr><th>玩家 ID / 會員</th><th>商品名稱</th><th>價格</th><th>付款狀態</th><th>出貨進度</th><th>操作</th></tr></thead>
+                    <tbody id="admin-orders-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>➕ 商品上架</h2>
+                <form onsubmit="handleAddProduct(event)">
+                    <div class="form-group">
+                        <label>商品分類</label>
+                        <select id="prodLocation" onchange="renderAdminProductList()">
+                            <option value="mc-firework">Minecraft 煙火特區</option>
+                            <option value="mc-other">Minecraft 其他商品</option>
+                            <option value="shop-goods">一般周邊商品</option>
+                            <option value="other-games">其他遊戲商品</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>商品名稱</label><input type="text" id="prodName" required></div>
+                    <div class="form-group"><label>商品描述</label><input type="text" id="prodDesc" required></div>
+                    <div class="form-group"><label>價格</label><input type="text" id="prodPrice" required></div>
+                    <div class="form-group"><label>PayPal 金額（選填，例如 5.00；Minecraft 商品也適用）</label><input type="number" step="0.01" min="0.01" id="prodPaypal"></div>
+                    <div class="form-group"><label>PayPal 付款連結（選填，Minecraft 商品也適用）</label><input type="url" id="prodPaypalUrl" placeholder="https://www.paypal.com/ncp/payment/..."></div>
+                    <button type="submit" class="btn btn-primary" id="productSubmitButton">上架商品</button>
+                    <button type="button" class="btn btn-outline" id="cancelProductEdit" onclick="cancelProductEdit()" style="display:none;">取消編輯</button>
+                </form>
+
+                <h3 style="margin-top: 20px; color: var(--text-color);">現有商品列表</h3>
+                <select id="adminProdCategorySelect" onchange="renderAdminProductList()" style="margin: 10px 0; padding: 6px; background: #fff5f8; color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px;">
+                    <option value="mc-firework">Minecraft 煙火特區</option>
+                    <option value="mc-other">Minecraft 其他商品</option>
+                    <option value="shop-goods">一般周邊商品</option>
+                    <option value="other-games">其他遊戲商品</option>
+                </select>
+                <table>
+                    <thead><tr><th>名稱</th><th>描述</th><th>價格</th><th>刪除</th></tr></thead>
+                    <tbody id="admin-products-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>✍️ 文章管理</h2>
+                <form id="postForm" onsubmit="handleAddPost(event)">
+                    <div class="form-group"><label>文章標題</label><input type="text" id="postTitle" required></div>
+                    <div class="form-group"><label>文章內容</label><textarea id="postContent" rows="4" required></textarea></div>
+                    <button type="submit" class="btn btn-primary" id="postSubmitButton">發布文章</button>
+                    <button type="button" class="btn btn-outline" id="cancelPostEdit" onclick="cancelPostEdit()" style="display:none;">取消編輯</button>
+                </form>
+                <table>
+                    <thead><tr><th>標題</th><th>日期</th><th>操作</th></tr></thead>
+                    <tbody id="admin-posts-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>🛠️ 服務與下載管理</h2>
+                <form id="serviceForm" onsubmit="handleAddService(event)">
+                    <div class="form-group"><label>服務名稱</label><input type="text" id="servName" required></div>
+                    <div class="form-group"><label>備註說明</label><textarea id="servNote" rows="2" required></textarea></div>
+                    <div class="form-group"><label>檔案名稱/網址 (URL)</label><input type="text" id="servFileUrl" required></div>
+                    <button type="submit" class="btn btn-primary" id="serviceSubmitButton">新增服務</button>
+                    <button type="button" class="btn btn-outline" id="cancelServiceEdit" onclick="cancelServiceEdit()" style="display:none;">取消編輯</button>
+                </form>
+                <table>
+                    <thead><tr><th>名稱</th><th>網址</th><th>操作</th></tr></thead>
+                    <tbody id="admin-services-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 登入 Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('loginModal')">&times;</button>
+            <h2>會員登入</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group"><label>帳號 (Minecraft ID / 使用者名稱)</label><input type="text" id="loginName" required></div>
+                <div class="form-group"><label>密碼</label><input type="password" id="loginPassword" required></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">登入</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 註冊 Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('registerModal')">&times;</button>
+            <h2>會員註冊</h2>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group"><label>使用者名稱</label><input type="text" id="regName" required></div>
+                <div class="form-group"><label>電子郵件</label><input type="email" id="regEmail" required></div>
+                <div class="form-group"><label>密碼（至少 8 個字元）</label><input type="password" id="regPassword" minlength="8" required></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">註冊</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Minecraft 購買 ID 確認 Modal -->
+    <div id="mcConfirmModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('mcConfirmModal')">&times;</button>
+            <h2>購買確認</h2>
+            <p id="checkoutItemInfo" style="margin-bottom: 10px; font-weight: bold;"></p>
+            <form onsubmit="handleConfirmMcBuy(event)">
+                <div id="mcIdFields">
+                    <p style="color: var(--text-muted); margin-bottom: 15px; font-size: 14px;">此為 Minecraft 相關商品，請輸入您的遊戲 ID 以利發貨。</p>
+                    <div class="form-group"><label>輸入 Minecraft ID</label><input type="text" id="mcId1"></div>
+                    <div class="form-group"><label>再次確認 Minecraft ID</label><input type="text" id="mcId2"></div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">送出訂單（稍後付款）</button>
+            </form>
+            <div id="paypal-link-container" style="margin-top:12px;"></div>
+            <div id="paypal-button-container" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <!-- 頁尾 -->
+    <footer>
+        <p>&copy; 2026 蠍瓜網 All Rights Reserved.</p>
+    </footer>
+
+    <!-- JavaScript 邏輯 -->
+    <script>
+        let globalData = { users: [], orders: [], posts: [], services: [], products: {} };
+        let currentUser = null;
+        let currentRole = null;
+        let pendingPurchaseItem = null;
+        let editingProduct = null;
+        let editingPostIndex = null;
+        let editingServiceIndex = null;
+        let paypalConfig = null;
+        let paypalSdkPromise = null;
+        let cartPaypalRenderId = 0;
+        const FAVORITES_KEY = 'scorki_favorites';
+        const CART_KEY = 'scorki_cart_v1';
+
+        function safePaypalUrl(value) {
+            try {
+                const url = new URL(value);
+                const host = url.hostname.toLowerCase();
+                const allowed = host === 'paypal.com' || host.endsWith('.paypal.com') || host === 'paypal.me' || host.endsWith('.paypal.me');
+                return url.protocol === 'https:' && allowed && !url.username && !url.password ? url.href : '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function getCart() {
+            try {
+                const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+                return Array.isArray(cart) ? cart : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveCart(cart) {
+            localStorage.setItem(CART_KEY, JSON.stringify(cart));
+            renderCart();
+        }
+
+        function addToCart(category, index) {
+            const item = globalData.products?.[category]?.[index];
+            if (!item) return;
+            const cart = getCart();
+            const existing = cart.find(entry => entry.category === category && entry.index === index && entry.name === item.name && entry.price === item.price);
+            if (cart.reduce((sum, entry) => sum + entry.quantity, 0) >= 20) {
+                alert('購物車最多 20 件商品');
+                return;
+            }
+            if (existing) existing.quantity += 1;
+            else cart.push({ category, index, name: item.name, price: item.price, quantity: 1 });
+            saveCart(cart);
+        }
+
+        function changeCartQuantity(cartIndex, change) {
+            const cart = getCart();
+            const entry = cart[cartIndex];
+            if (!entry) return;
+            if (change > 0 && cart.reduce((sum, item) => sum + item.quantity, 0) >= 20) {
+                alert('購物車最多 20 件商品');
+                return;
+            }
+            entry.quantity += change;
+            if (entry.quantity <= 0) cart.splice(cartIndex, 1);
+            saveCart(cart);
+        }
+
+        function removeFromCart(cartIndex) {
+            const cart = getCart();
+            cart.splice(cartIndex, 1);
+            saveCart(cart);
+        }
+
+        function renderCart() {
+            const cart = getCart();
+            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const hasMinecraftItem = cart.some(item => item.category.startsWith('mc-'));
+            document.getElementById('cartCount').textContent = `${count} 件`;
+            document.getElementById('cartEmpty').style.display = count ? 'none' : 'block';
+            document.getElementById('cartTable').style.display = count ? 'table' : 'none';
+            document.getElementById('cartCheckoutButton').style.display = count ? 'inline-block' : 'none';
+            document.getElementById('cartMcIdField').style.display = hasMinecraftItem ? 'block' : 'none';
+            document.getElementById('cart-tbody').innerHTML = cart.map((item, index) =>
+                `<tr><td>${esc(item.name)}</td><td>${esc(item.price)}</td><td><button class="btn btn-outline" aria-label="減少數量" onclick="changeCartQuantity(${index}, -1)">−</button> ${item.quantity} <button class="btn btn-outline" aria-label="增加數量" onclick="changeCartQuantity(${index}, 1)">+</button></td><td>${(() => { const url = safePaypalUrl(globalData.products?.[item.category]?.[item.index]?.paypalUrl); return url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">PayPal</a>` : '未提供'; })()}</td><td><button class="btn btn-danger" onclick="removeFromCart(${index})">移除</button></td></tr>`).join('');
+            renderCartPaypal(cart);
+        }
+
+        async function renderCartPaypal(cart) {
+            const box = document.getElementById('cart-paypal-container');
+            const renderId = ++cartPaypalRenderId;
+            box.innerHTML = '';
+            if (!cart.length || cart.some(entry => {
+                const liveItem = globalData.products?.[entry.category]?.[entry.index];
+                return !liveItem || liveItem.name !== entry.name || liveItem.price !== entry.price || !liveItem.paypalPrice;
+            })) return;
+            if (!(await loadPaypalSdk()) || renderId !== cartPaypalRenderId || JSON.stringify(cart) !== JSON.stringify(getCart())) return;
+            box.innerHTML = '<p style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">使用 PayPal 一次支付購物車</p><div id="cart-paypal-buttons"></div>';
+            const cartSnapshot = JSON.stringify(cart);
+            paypal.Buttons({
+                onClick: (data, actions) => {
+                    if (cart.some(item => item.category.startsWith('mc-')) && !document.getElementById('cartMcId').value.trim()) {
+                        alert('請先填寫 Minecraft ID。');
+                        return actions.reject();
+                    }
+                    return actions.resolve();
+                },
+                createOrder: async () => {
+                    const res = await fetch('/api/paypal/create-cart-order', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            items: cart.map(item => ({ category: item.category, index: item.index, name: item.name, price: item.price, quantity: item.quantity })),
+                            mcId: document.getElementById('cartMcId').value.trim()
+                        })
+                    });
+                    const result = await res.json();
+                    if (!res.ok) { alert(result.message || '建立 PayPal 訂單失敗'); throw new Error(result.message); }
+                    return result.id;
+                },
+                onApprove: async data => {
+                    const res = await fetch('/api/paypal/capture-order', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderID: data.orderID })
+                    });
+                    const result = await res.json();
+                    if (!res.ok) { alert(result.message || 'PayPal 付款確認失敗'); return; }
+                    if (JSON.stringify(getCart()) === cartSnapshot) {
+                        localStorage.removeItem(CART_KEY);
+                        document.getElementById('cartMcId').value = '';
+                        renderCart();
+                    }
+                    alert('PayPal 付款完成，訂單已建立。');
+                    renderMyOrders();
+                },
+                onError: () => alert('PayPal 發生錯誤，請稍後再試')
+            }).render('#cart-paypal-buttons');
+        }
+
+        async function checkoutCart() {
+            if (!getCurrentUser()) { alert('請先登入！'); openModal('loginModal'); return; }
+            const cart = getCart();
+            if (!cart.length) return;
+            const mcId = document.getElementById('cartMcId').value.trim();
+            if (cart.some(item => item.category.startsWith('mc-')) && !mcId) {
+                alert('購物車包含 Minecraft 商品，請填寫遊戲 ID。');
+                document.getElementById('cartMcId').focus();
+                return;
+            }
+            const items = cart.flatMap(item => Array.from({ length: item.quantity }, () => ({
+                category: item.category, index: item.index, name: item.name, price: item.price
+            })));
+            const button = document.getElementById('cartCheckoutButton');
+            button.disabled = true;
+            try {
+                const res = await fetch('/api/cart/checkout', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items, mcId })
+                });
+                const result = await res.json();
+                if (!res.ok) { alert(result.message || '送出訂單失敗'); return; }
+                localStorage.removeItem(CART_KEY);
+                document.getElementById('cartMcId').value = '';
+                renderCart();
+                alert(`已建立 ${result.count} 筆訂單，可在「我的訂單」查看。`);
+                renderMyOrders();
+            } catch (e) {
+                alert('連線伺服器失敗，購物車已保留。');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function getFavorites() {
+            try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); }
+            catch (e) { return []; }
+        }
+
+        function productKey(category, item) {
+            return JSON.stringify([category, item.name, item.desc]);
+        }
+
+        function toggleFavorite(category, index) {
+            const item = globalData.products[category][index];
+            const key = productKey(category, item);
+            const favorites = getFavorites();
+            const next = favorites.includes(key) ? favorites.filter(value => value !== key) : [...favorites, key];
+            localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+            renderAllProductTables();
+            renderFavorites();
+            updateFavoriteCount();
+        }
+
+        function updateFavoriteCount() {
+            const count = document.getElementById('favoriteCount');
+            if (count) count.textContent = getFavorites().length;
+            const stat = document.getElementById('statFavorites');
+            if (stat) stat.textContent = getFavorites().length;
+        }
+
+        function renderFavorites() {
+            const tbody = document.getElementById('favorites-tbody');
+            if (!tbody) return;
+            const favorites = new Set(getFavorites());
+            const items = Object.entries(globalData.products || {}).flatMap(([category, products]) =>
+                (products || []).map((item, index) => ({ category, item, index }))
+                    .filter(entry => favorites.has(productKey(category, entry.item))));
+            const query = (document.getElementById('shopSearch')?.value || '').trim().toLocaleLowerCase();
+            const filtered = items.filter(({ item }) => `${item.name} ${item.desc}`.toLocaleLowerCase().includes(query));
+            tbody.innerHTML = filtered.length ? filtered.map(({ category, item, index }) =>
+                `<tr><td><b>${esc(item.name)}</b></td><td>${esc(item.desc)}</td><td>${esc(item.price)}</td><td><button class="buy-btn" onclick="buyItem('${category}', ${index})">購買</button> <button class="buy-btn" onclick="toggleFavorite('${category}', ${index})" aria-label="取消收藏">★</button></td></tr>`).join('') :
+                `<tr><td colspan="4" style="text-align:center; color:#9d5c81;">${items.length ? '沒有符合的收藏商品' : '尚未收藏商品'}</td></tr>`;
+        }
+
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        async function loadPaypalSdk() {
+            if (!paypalConfig) {
+                try { paypalConfig = await (await fetch('/api/paypal/config')).json(); }
+                catch (e) { paypalConfig = { enabled: false }; }
+            }
+            if (!paypalConfig.enabled) return false;
+            if (!paypalSdkPromise) {
+                paypalSdkPromise = new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(paypalConfig.clientId)}&currency=${encodeURIComponent(paypalConfig.currency)}`;
+                    s.onload = () => resolve(true);
+                    s.onerror = () => { paypalSdkPromise = null; reject(); };
+                    document.head.appendChild(s);
+                }).catch(() => false);
+            }
+            return paypalSdkPromise;
+        }
+
+        function getMcIdOrNull() {
+            if (!pendingPurchaseItem.isMc) return '(一般會員: ' + getCurrentUser() + ')';
+            const a = document.getElementById('mcId1').value.trim();
+            const b = document.getElementById('mcId2').value.trim();
+            if (!a || a !== b) { alert('Minecraft ID 為空或兩次不一致！'); return null; }
+            return a;
+        }
+
+        function openProductPaypalLink() {
+            if (!pendingPurchaseItem || getMcIdOrNull() === null) return;
+            const url = safePaypalUrl(pendingPurchaseItem.paypalUrl);
+            if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        }
+
+        async function renderPaypalButtons() {
+            const box = document.getElementById('paypal-button-container');
+            box.innerHTML = '';
+            const p = pendingPurchaseItem;
+            if (!p.paypalPrice) {
+                if (p.isMc && !safePaypalUrl(p.paypalUrl)) {
+                    box.innerHTML = '<p style="color:var(--text-muted);">此 Minecraft 商品尚未設定 PayPal 金額或付款連結。</p>';
+                }
+                return;
+            }
+            if (!(await loadPaypalSdk())) return;
+            box.innerHTML = `<p style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">或使用 PayPal 立即付款（${esc(p.paypalPrice)} ${esc(paypalConfig.currency)}）</p><div id="paypal-buttons"></div>`;
+            paypal.Buttons({
+                onClick: (data, actions) => getMcIdOrNull() === null ? actions.reject() : actions.resolve(),
+                createOrder: async () => {
+                    const res = await fetch('/api/paypal/create-order', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ category: p.category, index: p.index, mcId: getMcIdOrNull(), buyer: getCurrentUser() })
+                    });
+                    const d = await res.json();
+                    if (!res.ok) { alert(d.message || '建立付款失敗'); throw new Error(d.message); }
+                    return d.id;
+                },
+                onApprove: async (data) => {
+                    const res = await fetch('/api/paypal/capture-order', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderID: data.orderID })
+                    });
+                    const d = await res.json();
+                    alert(res.ok ? '付款成功，訂單已送至後台！' : (d.message || '付款確認失敗'));
+                    closeModal('mcConfirmModal');
+                    pendingPurchaseItem = null;
+                    fetchAllData();
+                },
+                onError: () => alert('PayPal 發生錯誤，請稍後再試')
+            }).render('#paypal-buttons');
+        }
+
+        // 開場載入畫面計時器 (設定總共約 7 秒，可自行在總毫秒數調整)
+        function initSplashScreen() {
+            const splashScreen = document.getElementById('splash-screen');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            let currentPercent = 0;
+            // 7 秒內跑完 100% (總共 7000 毫秒，每 70 毫秒更新一次 = 100 次)
+            const totalDuration = 7000; 
+            const intervalTime = 70;
+            const increment = 100 / (totalDuration / intervalTime);
+
+            let timer = setInterval(() => {
+                currentPercent += increment;
+                if (currentPercent >= 100) {
+                    currentPercent = 100;
+                    clearInterval(timer);
+                    // 跑完後淡出隱藏
+                    splashScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        splashScreen.style.display = 'none';
+                    }, 600); // 對應 CSS 的 transition 時間
+                }
+                progressBar.style.width = currentPercent + '%';
+                progressText.innerText = Math.floor(currentPercent) + '%';
+            }, intervalTime);
+        }
+
+        async function fetchAllData() {
+            try {
+                let res = await fetch('/api/data');
+                globalData = await res.json();
+                refreshUI();
+            } catch (e) {
+                console.error("無法同步伺服器資料", e);
+            }
+        }
+
+        function getCurrentUser() { return currentUser; }
+        function setCurrentUser(name, role) {
+            currentUser = name || null;
+            currentRole = role || null;
+            updateAuthUI();
+        }
+
+        async function restoreSession() {
+            try {
+                const res = await fetch('/api/auth/me');
+                const state = await res.json();
+                setCurrentUser(state.user, state.role);
+            } catch (e) {
+                setCurrentUser(null, null);
+            }
+        }
+
+        function updateAuthUI() {
+            const user = getCurrentUser();
+            const userStatus = document.getElementById('userStatus');
+            const btnLogin = document.getElementById('btnLogin');
+            const btnRegister = document.getElementById('btnRegister');
+            const btnLogout = document.getElementById('btnLogout');
+            const btnAdmin = document.getElementById('btnAdmin');
+            const btnMyOrders = document.getElementById('btnMyOrders');
+
+            if (user) {
+                document.getElementById('welcomeName').innerText = user;
+                userStatus.style.display = 'flex';
+                btnLogin.style.display = 'none';
+                btnRegister.style.display = 'none';
+                btnLogout.style.display = 'block';
+                btnAdmin.style.display = (currentRole === 'admin') ? 'block' : 'none';
+                btnMyOrders.style.display = 'inline';
+            } else {
+                userStatus.style.display = 'none';
+                btnLogin.style.display = 'block';
+                btnRegister.style.display = 'block';
+                btnLogout.style.display = 'none';
+                btnAdmin.style.display = 'none';
+                btnMyOrders.style.display = 'none';
+            }
+        }
+
+        function refreshUI() {
+            updateAuthUI();
+            renderAllProductTables();
+            renderFavorites();
+            updateFavoriteCount();
+            renderBlog();
+            renderServices();
+            updateDashboardStats();
+        }
+
+        function updateDashboardStats() {
+            const products = Object.values(globalData.products || {}).flat();
+            document.getElementById('statProducts').textContent = products.length;
+            document.getElementById('statPosts').textContent = (globalData.posts || []).length;
+            document.getElementById('statServices').textContent = (globalData.services || []).length;
+            document.getElementById('statFavorites').textContent = getFavorites().length;
+            const latest = (globalData.posts || [])[0];
+            document.getElementById('homeLatestPost').innerHTML = latest
+                ? `<b>${esc(latest.title)}</b><small style="display:block; margin-top:5px;">${esc(latest.date || '')}</small><p style="margin-top:8px; white-space:pre-wrap;">${esc(latest.content || '')}</p>`
+                : '目前沒有公告';
+        }
+
+        function renderAllProductTables() {
+            const query = (document.getElementById('shopSearch')?.value || '').trim().toLocaleLowerCase();
+            const selectedCategory = document.getElementById('shopCategory')?.value || 'all';
+            const sortOrder = document.getElementById('shopSort')?.value || 'default';
+            const favorites = new Set(getFavorites());
+            ['mc-firework', 'mc-other', 'shop-goods', 'other-games'].forEach(cat => {
+                const tbody = document.getElementById(cat + '-tbody');
+                if (!tbody) return;
+                tbody.closest('.card').style.display = selectedCategory === 'all' || selectedCategory === cat ? '' : 'none';
+                let items = ((globalData.products && globalData.products[cat]) || [])
+                    .map((item, index) => ({ item, index }))
+                    .filter(({ item }) => `${item.name} ${item.desc}`.toLocaleLowerCase().includes(query));
+                if (sortOrder === 'name') items.sort((a, b) => a.item.name.localeCompare(b.item.name, 'zh-TW'));
+                if (items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#9d5c81;">${query ? '（沒有符合的商品）' : '（目前尚無商品）'}</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = items.map(({ item, index }) => `
+                    <tr><td><b>${esc(item.name)}</b></td><td>${esc(item.desc)}</td><td>${esc(item.price)}</td><td><button class="buy-btn" onclick="addToCart('${cat}', ${index})">加入購物車</button> <button class="buy-btn" onclick="buyItem('${cat}', ${index})">立即購買</button> <button class="buy-btn" onclick="toggleFavorite('${cat}', ${index})" aria-label="${favorites.has(productKey(cat, item)) ? '取消收藏' : '加入收藏'}">${favorites.has(productKey(cat, item)) ? '★' : '☆'}</button></td></tr>
+                `).join('');
+            });
+            renderFavorites();
+            renderCart();
+        }
+
+        function renderBlog() {
+            const container = document.getElementById('blog-container');
+            if (!container) return;
+            const query = (document.getElementById('blogSearch')?.value || '').trim().toLocaleLowerCase();
+            const posts = (globalData.posts || []).filter(p => `${p.title} ${p.content}`.toLocaleLowerCase().includes(query));
+            container.innerHTML = posts.length ? posts.map(p => `
+                <div class="card"><h3>${esc(p.title)}</h3><p style="color:var(--text-muted); font-size:12px; margin:5px 0 10px 0;">發布日期：${esc(p.date)}</p><p>${esc(p.content).replace(/\n/g, '<br>')}</p></div>
+            `).join('') : '<div class="card">沒有符合的文章</div>';
+        }
+
+        function renderServices() {
+            const container = document.getElementById('service-container');
+            if (!container) return;
+            container.innerHTML = (globalData.services || []).map(s => `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><h3>🛠️ ${s.name}</h3><p style="color:var(--text-muted); margin-top:5px;">${s.note.replace(/\n/g, '<br>')}</p></div>
+                    <a href="/${s.url}" class="btn btn-primary" download>下載檔案</a>
+                </div>
+            `).join('');
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                let res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                let result = await res.json();
+                
+                if (res.ok) {
+                    alert('註冊成功！請登入。');
+                    closeModal('registerModal');
+                    await fetchAllData();
+                } else {
+                    alert(result.message || '註冊失敗');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('連線伺服器失敗');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('loginName').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password })
+                });
+                const result = await res.json();
+                if (!res.ok) { alert(result.message || '帳號或密碼錯誤'); return; }
+                setCurrentUser(result.user, result.role);
+                alert(result.role === 'admin' ? '管理員登入成功！' : '登入成功！');
+                closeModal('loginModal');
+            } catch (err) {
+                alert('連線伺服器失敗');
+            }
+        }
+
+        async function handleLogout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            setCurrentUser(null, null);
+            showPage('home');
+        }
+
+        function buyItem(category, index) {
+            if (!getCurrentUser()) { alert('請先登入！'); openModal('loginModal'); return; }
+            const item = globalData.products[category][index];
+            pendingPurchaseItem = {
+                category, index, itemName: item.name, price: item.price,
+                paypalPrice: item.paypalPrice, paypalUrl: item.paypalUrl,
+                isMc: category.startsWith('mc-')
+            };
+            document.getElementById('checkoutItemInfo').innerText = `${item.name}　${item.price}`;
+            document.getElementById('mcIdFields').style.display = pendingPurchaseItem.isMc ? 'block' : 'none';
+            document.getElementById('mcId1').value = '';
+            document.getElementById('mcId2').value = '';
+            const paypalUrl = safePaypalUrl(item.paypalUrl);
+            document.getElementById('paypal-link-container').innerHTML = paypalUrl
+                ? '<button type="button" class="btn btn-outline" onclick="openProductPaypalLink()">使用此商品的 PayPal 付款連結</button>'
+                : '';
+            openModal('mcConfirmModal');
+            renderPaypalButtons();
+        }
+
+        async function sendOrder(orderData) {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+            const result = await res.json();
+            if (!res.ok) { alert(result.message || '訂單建立失敗'); return; }
+            alert('訂單已成立並送至後台！');
+            fetchAllData();
+            renderMyOrders();
+        }
+
+        async function handleConfirmMcBuy(e) {
+            e.preventDefault();
+            if (pendingPurchaseItem) {
+                const mcId = getMcIdOrNull();
+                if (mcId === null) return;
+                await sendOrder({ category: pendingPurchaseItem.category, index: pendingPurchaseItem.index, mcId });
+                closeModal('mcConfirmModal');
+                pendingPurchaseItem = null;
+            }
+        }
+
+        async function renderAdminOrders() {
+            let res = await fetch('/api/orders');
+            let orders = await res.json();
+            document.getElementById('admin-orders-tbody').innerHTML = orders.length === 0 ? `<tr><td colspan="6" style="text-align:center; color:#9d5c81;">（尚無訂單）</td></tr>` :
+                orders.map((o, i) => `<tr><td><b>${esc(o.mcId)}</b></td><td>${esc(o.itemName)}</td><td>${esc(o.price)}</td><td>${esc(o.status || '待付款')}<br><small>${esc(o.time || '')}</small></td><td><select aria-label="更新出貨進度" onchange="updateOrderStatus(${i}, this.value)">${['待處理', '處理中', '已完成', '已取消'].map(status => `<option value="${status}" ${(o.fulfillmentStatus || '待處理') === status ? 'selected' : ''}>${status}</option>`).join('')}</select></td><td><button class="btn btn-danger" style="padding:4px 8px;" onclick="deleteOrder(${i})">🗑️</button></td></tr>`).join('');
+        }
+
+            async function renderMyOrders() {
+                const tbody = document.getElementById('my-orders-tbody');
+                if (!tbody || !getCurrentUser()) return;
+                const res = await fetch('/api/my/orders');
+                if (!res.ok) { tbody.innerHTML = '<tr><td colspan="5">無法載入訂單</td></tr>'; return; }
+                const orders = await res.json();
+                tbody.innerHTML = orders.length ? orders.map(order =>
+                `<tr><td>${esc(order.itemName)}</td><td>${esc(order.price)}</td><td>${esc(order.status || '待付款')}</td><td>${esc(order.fulfillmentStatus || '待處理')}</td><td>${esc(order.time || '')}</td></tr>`).join('') :
+                '<tr><td colspan="5" style="text-align:center;">目前沒有訂單</td></tr>';
+            }
+
+        async function updateOrderStatus(index, fulfillmentStatus) {
+            const res = await fetch('/api/orders', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index, fulfillmentStatus })
+            });
+            if (!res.ok) {
+                const result = await res.json();
+                alert(result.message || '更新訂單狀態失敗');
+                renderAdminOrders();
+            }
+        }
+
+        async function deleteOrder(index) {
+            await fetch('/api/orders', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index }) });
+            renderAdminOrders();
+        }
+
+        async function renderAdminProductList() {
+            let cat = document.getElementById('adminProdCategorySelect').value;
+            let res = await fetch(`/api/products/${cat}`);
+            let items = await res.json();
+            document.getElementById('admin-products-tbody').innerHTML = items.length === 0 ? `<tr><td colspan="4" style="text-align:center; color:#9d5c81;">（尚無商品）</td></tr>` :
+                items.map((item, i) => `<tr><td><b>${esc(item.name)}</b></td><td>${esc(item.desc)}</td><td>${esc(item.price)}${item.paypalPrice ? '<br><small>PayPal: ' + esc(item.paypalPrice) + '</small>' : ''}${safePaypalUrl(item.paypalUrl) ? '<br><small>PayPal 連結已設定</small>' : ''}</td><td><button class="btn btn-outline" style="padding:4px 8px;" onclick="startProductEdit('${cat}', ${i})">編輯</button> <button class="btn btn-danger" style="padding:4px 8px;" onclick="deleteProduct('${cat}', ${i})">刪除</button></td></tr>`).join('');
+        }
+
+        function startProductEdit(category, index) {
+            const item = (globalData.products[category] || [])[index];
+            if (!item) return;
+            editingProduct = { category, index };
+            document.getElementById('prodLocation').value = category;
+            document.getElementById('adminProdCategorySelect').value = category;
+            document.getElementById('prodName').value = item.name;
+            document.getElementById('prodDesc').value = item.desc;
+            document.getElementById('prodPrice').value = item.price;
+            document.getElementById('prodPaypal').value = item.paypalPrice || '';
+            document.getElementById('prodPaypalUrl').value = item.paypalUrl || '';
+            document.getElementById('productSubmitButton').textContent = '儲存修改';
+            document.getElementById('cancelProductEdit').style.display = 'inline-block';
+            document.getElementById('prodName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById('prodName').focus();
+        }
+
+        function cancelProductEdit() {
+            editingProduct = null;
+            document.querySelector('#admin-panel form[onsubmit="handleAddProduct(event)"]').reset();
+            document.getElementById('productSubmitButton').textContent = '上架商品';
+            document.getElementById('cancelProductEdit').style.display = 'none';
+        }
+
+        async function deleteProduct(cat, index) {
+            if (editingProduct && editingProduct.category === cat) cancelProductEdit();
+            await fetch(`/api/products/${cat}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index }) });
+            renderAdminProductList();
+            fetchAllData();
+        }
+
+        async function handleAddProduct(e) {
+            e.preventDefault();
+            let cat = document.getElementById('prodLocation').value;
+            let item = { name: document.getElementById('prodName').value, desc: document.getElementById('prodDesc').value, price: document.getElementById('prodPrice').value };
+            const pp = document.getElementById('prodPaypal').value;
+            if (pp) item.paypalPrice = pp;
+            const paypalUrl = document.getElementById('prodPaypalUrl').value.trim();
+            if (paypalUrl) item.paypalUrl = paypalUrl;
+            const editing = editingProduct && editingProduct.category === cat;
+            const res = await fetch(`/api/products/${cat}`, {
+                method: editing ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editing ? { index: editingProduct.index, item } : item)
+            });
+            if (!res.ok) { alert('商品儲存失敗'); return; }
+            if (editing) cancelProductEdit();
+            else document.querySelector('#admin-panel form[onsubmit="handleAddProduct(event)"]').reset();
+            alert(editing ? '商品修改成功！' : '商品上架成功！');
+            fetchAllData();
+            renderAdminProductList();
+        }
+
+        async function handleAddPost(e) {
+            e.preventDefault();
+            const post = {
+                title: document.getElementById('postTitle').value.trim(),
+                date: editingPostIndex === null ? new Date().toISOString().split('T')[0] : globalData.posts[editingPostIndex].date,
+                content: document.getElementById('postContent').value.trim()
+            };
+            const editing = editingPostIndex !== null;
+            const res = await fetch('/api/posts', {
+                method: editing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editing ? { index: editingPostIndex, item: post } : post)
+            });
+            if (!res.ok) { alert('文章儲存失敗'); return; }
+            if (editing) cancelPostEdit();
+            else document.getElementById('postForm').reset();
+            alert(editing ? '文章修改成功！' : '文章發布成功！');
+            await fetchAllData();
+            renderAdminPostList();
+        }
+
+        async function handleAddService(e) {
+            e.preventDefault();
+            const serv = {
+                name: document.getElementById('servName').value.trim(),
+                note: document.getElementById('servNote').value.trim(),
+                url: document.getElementById('servFileUrl').value.trim()
+            };
+            const editing = editingServiceIndex !== null;
+            const res = await fetch('/api/services', {
+                method: editing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editing ? { index: editingServiceIndex, item: serv } : serv)
+            });
+            if (!res.ok) { alert('服務儲存失敗'); return; }
+            if (editing) cancelServiceEdit();
+            else document.getElementById('serviceForm').reset();
+            alert(editing ? '服務修改成功！' : '服務新增成功！');
+            await fetchAllData();
+            renderAdminServiceList();
+        }
+
+        function renderAdminPostList() {
+            const tbody = document.getElementById('admin-posts-tbody');
+            if (!tbody) return;
+            const posts = globalData.posts || [];
+            tbody.innerHTML = posts.length ? posts.map((post, index) =>
+                `<tr><td>${esc(post.title)}</td><td>${esc(post.date || '')}</td><td><button class="btn btn-outline" onclick="startPostEdit(${index})">編輯</button> <button class="btn btn-danger" onclick="deletePost(${index})">刪除</button></td></tr>`).join('') :
+                '<tr><td colspan="3" style="text-align:center;">尚無文章</td></tr>';
+        }
+
+        function startPostEdit(index) {
+            const post = (globalData.posts || [])[index];
+            if (!post) return;
+            editingPostIndex = index;
+            document.getElementById('postTitle').value = post.title;
+            document.getElementById('postContent').value = post.content;
+            document.getElementById('postSubmitButton').textContent = '儲存修改';
+            document.getElementById('cancelPostEdit').style.display = 'inline-block';
+            document.getElementById('postTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById('postTitle').focus();
+        }
+
+        function cancelPostEdit() {
+            editingPostIndex = null;
+            document.getElementById('postForm').reset();
+            document.getElementById('postSubmitButton').textContent = '發布文章';
+            document.getElementById('cancelPostEdit').style.display = 'none';
+        }
+
+        async function deletePost(index) {
+            if (!confirm('確定要刪除這篇文章嗎？')) return;
+            const res = await fetch('/api/posts', {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index })
+            });
+            if (!res.ok) { alert('文章刪除失敗'); return; }
+            if (editingPostIndex !== null) cancelPostEdit();
+            await fetchAllData();
+            renderAdminPostList();
+        }
+
+        function renderAdminServiceList() {
+            const tbody = document.getElementById('admin-services-tbody');
+            if (!tbody) return;
+            const services = globalData.services || [];
+            tbody.innerHTML = services.length ? services.map((service, index) =>
+                `<tr><td>${esc(service.name)}</td><td>${esc(service.url)}</td><td><button class="btn btn-outline" onclick="startServiceEdit(${index})">編輯</button> <button class="btn btn-danger" onclick="deleteService(${index})">刪除</button></td></tr>`).join('') :
+                '<tr><td colspan="3" style="text-align:center;">尚無服務</td></tr>';
+        }
+
+        function startServiceEdit(index) {
+            const service = (globalData.services || [])[index];
+            if (!service) return;
+            editingServiceIndex = index;
+            document.getElementById('servName').value = service.name;
+            document.getElementById('servNote').value = service.note;
+            document.getElementById('servFileUrl').value = service.url;
+            document.getElementById('serviceSubmitButton').textContent = '儲存修改';
+            document.getElementById('cancelServiceEdit').style.display = 'inline-block';
+            document.getElementById('servName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById('servName').focus();
+        }
+
+        function cancelServiceEdit() {
+            editingServiceIndex = null;
+            document.getElementById('serviceForm').reset();
+            document.getElementById('serviceSubmitButton').textContent = '新增服務';
+            document.getElementById('cancelServiceEdit').style.display = 'none';
+        }
+
+        async function deleteService(index) {
+            if (!confirm('確定要刪除這項服務嗎？')) return;
+            const res = await fetch('/api/services', {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index })
+            });
+            if (!res.ok) { alert('服務刪除失敗'); return; }
+            if (editingServiceIndex !== null) cancelServiceEdit();
+            await fetchAllData();
+            renderAdminServiceList();
+        }
+
+        function showPage(pageId) {
+            if (pageId === 'admin-panel') {
+                if (currentRole !== 'admin') { alert('無權限'); return; }
+                renderAdminOrders();
+                renderAdminProductList();
+                renderAdminPostList();
+                renderAdminServiceList();
+            }
+            if (pageId === 'my-orders') {
+                if (!getCurrentUser()) { alert('請先登入！'); openModal('loginModal'); return; }
+                renderMyOrders();
+            }
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+            event && event.target && event.target.tagName === 'A' && event.target.classList.add('active');
+            if (pageId === 'favorites') renderFavorites();
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        window.onload = async function() {
+            initSplashScreen(); // 啟動開場載入動畫
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            await Promise.all([restoreSession(), fetchAllData()]);
+        };
+    </script>
+</body>
+</html>

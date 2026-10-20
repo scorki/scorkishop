@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>scorki QR code maker</title>
+    <!-- 引入 qrcode.js 套件 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #qrcode-container {
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+        canvas {
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>scorki QR code maker</h2>
+    
+    <div class="input-group">
+        <label for="text-input">輸入網址或文字：</label>
+        <input type="text" id="text-input" value="https://www.example.com" placeholder="請輸入內容...">
+    </div>
+
+    <div class="input-group">
+        <label for="image-input">選擇中間的圖片：</label>
+        <input type="file" id="image-input" accept="image/*">
+    </div>
+
+    <button onclick="generateQRCode()">產生 QR Code</button>
+
+    <div id="qrcode-container">
+        <!-- 隱藏的 div 供 qrcode.js 生成原始 QR Code -->
+        <div id="qrcode" style="display:none;"></div>
+    </div>
+</div>
+
+<script>
+function generateQRCode() {
+    const text = document.getElementById('text-input').value;
+    const imageInput = document.getElementById('image-input');
+    const container = document.getElementById('qrcode-container');
+    
+    if (!text) {
+        alert('請輸入文字或網址！');
+        return;
+    }
+
+    // 清空舊的畫布與 QR Code
+    container.innerHTML = '<div id="qrcode" style="display:none;"></div>';
+
+    // 1. 產生標準 QR Code
+    const qrCodeDiv = document.getElementById('qrcode');
+    const qrSize = 250; // QR Code 尺寸
+    
+    const qrcode = new QRCode(qrCodeDiv, {
+        text: text,
+        width: qrSize,
+        height: qrSize,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H // 使用最高容錯率 H，中心被遮擋也能正常掃描
+    });
+
+    // 2. 透過 Canvas 將上傳的圖片疊加到 QR Code 正中間
+    setTimeout(() => {
+        const imgElement = qrCodeDiv.querySelector('img');
+        if (!imgElement) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = qrSize;
+        canvas.height = qrSize;
+        const ctx = canvas.getContext('2d');
+
+        const qrImage = new Image();
+        qrImage.src = imgElement.src;
+        qrImage.onload = function() {
+            // 畫出 QR Code 背景
+            ctx.drawImage(qrImage, 0, 0, qrSize, qrSize);
+
+            // 如果使用者有上傳圖片，則繪製到正中間
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const centerImage = new Image();
+                    centerImage.src = e.target.result;
+                    centerImage.onload = function() {
+                        const centerSize = 60; // 中間圖片的大小 (像素)
+                        const centerPos = (qrSize - centerSize) / 2;
+
+                        // 畫一個白色底色框，讓中間圖片更清晰
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(centerPos - 4, centerPos - 4, centerSize + 8, centerSize + 8);
+
+                        // 繪製中心圖片
+                        ctx.drawImage(centerImage, centerPos, centerPos, centerSize, centerSize);
+
+                        // 將合成後的 Canvas 放到畫面上
+                        container.appendChild(canvas);
+                    }
+                }
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                // 沒有上傳圖片就直接顯示純 QR Code
+                container.appendChild(canvas);
+            }
+        };
+    }, 100);
+}
+
+// 頁面載入時自動生成一次預設的
+window.onload = function() {
+    generateQRCode();
+};
+</script>
+
+</body>
+</html>
