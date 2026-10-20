@@ -10,6 +10,11 @@ import requests
 from flask import Flask, jsonify, request, render_template, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
+# 引入 Supabase 與 Cloudinary
+from supabase import create_client, Client
+import cloudinary
+import cloudinary.uploader
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(32)
 app.config.update(
@@ -17,51 +22,75 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE", "").lower() == "true",
 )
-DB_FILE = "database.json"
-DB_LOCK = threading.Lock()
+
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
 
-# PayPal 設定：請以環境變數提供，勿寫死在程式裡
+# 初始化 Supabase 連線
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY) if SUPABASE_URL and SUPABASE_SECRET_KEY else None
+
+# 初始化 Cloudinary 連線
+cloudinary.config(
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key = os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+)
+
+# PayPal 設定
 PAYPAL_CLIENT_ID = os.environ.get("PAYPAL_CLIENT_ID", "")
 PAYPAL_SECRET = os.environ.get("PAYPAL_SECRET", "")
 PAYPAL_CURRENCY = os.environ.get("PAYPAL_CURRENCY", "USD")
 PAYPAL_API = ("https://api-m.paypal.com" if os.environ.get("PAYPAL_ENV", "sandbox") == "live"
               else "https://api-m.sandbox.paypal.com")
-# PayPal 訂單 ID -> 待捕獲的訂單資料
 PENDING_PAYPAL = {}
 
-# 初始化資料庫檔案
+# --- 資料庫輔助函式（改用 Supabase 替代原本的 database.json） ---
 def load_db():
-    if not os.path.exists(DB_FILE):
-        initial_data = {
-            "users": [],
-            "orders": [],
-            "posts": [
-                {"title": "歡迎來到蠍瓜網", "date": "2026-06-07", "content": "這是蠍瓜網的第一篇公告，歡迎所有玩家與訪客！"}
-            ],
-            "services": [
-                {"name": "蠍瓜伺服器客戶端工具", "note": "內含優化模組與快捷連線設定，請直接下載執行。", "url": "server.exe"}
-            ],
-            "products": {
-                "mc-firework": [
-                    {"name": "飛行 III 煙火（大包裝）", "desc": "Minecraft 內使用，鞘翅長途飛行必備！", "price": "23000 伺服幣"},
-                    {"name": "飛行 III 煙火（中包裝）", "desc": "Minecraft 內使用，鞘翅飛行加速煙火", "price": "2300 伺服幣"},
-                    {"name": "飛行 III 煙火（基礎包）", "desc": "Minecraft 內使用，飛行時間 III", "price": "500 伺服幣"}
-                ],
-                "mc-other": [],
-                "shop-goods": [],
-                "other-games": []
-            }
+    # 如果還沒設定 Supabase，回傳預設結構避免報錯
+    if not supabase:
+        return {
+            "users": [], "orders": [],
+            "posts": [{"title": "歡迎來到蠍瓜網", "date": "2026-06-07", "content": "這是蠍瓜網的第一篇公告，歡迎所有玩家與訪客！"}],
+            "services": [{"name": "蠍瓜伺服器客戶端工具", "note": "內含優化模組與快捷連線設定，請直接下載執行。", "url": "server.exe"}],
+            "products": {"mc-firework": [], "mc-other": [], "shop-goods": [], "other-games": []}
         }
-        save_db(initial_data)
-        return initial_data
-    with open(DB_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    
+    try:
+        # 從 Supabase 的 kv_store 或對應表格抓取資料
+        res = supabase.table("app_data").select("data").eq("id", 1).execute()
+        if res.data and len(res.data) > 0:
+            return res.data[0]["data"]
+        else:
+            # 初始資料
+            initial_data = {
+                "users": [],
+                "orders": [],
+                "posts": [{"title": "歡迎來到蠍瓜網", "date": "2026-06-07", "content": "這是蠍瓜網的第一篇公告，歡迎所有玩家與訪客！"}],
+                "services": [{"name": "蠍瓜伺服器客戶端工具", "note": "內含優化模組與快捷連線設定，請直接下載執行。", "url": "server.exe"}],
+                "products": {
+                    "mc-firework": [
+                        {"name": "飛行 III 煙火（大包裝）", "desc": "Minecraft 內使用，鞘翅長途飛行必備！", "price": "23000 伺服幣"},
+                        {"name": "飛行 III 煙火（中包裝）", "desc": "Minecraft 內使用，鞘翅飛行加速煙火", "price": "2300 伺服幣"},
+                        {"name": "飛行 III 煙火（基礎包）", "desc": "Minecraft 內使用，飛行時間 III", "price": "500 伺服幣"}
+                    ],
+                    "mc-other": [], "shop-goods": [], "other-games": []
+                }
+            }
+            supabase.table("app_data").upsert({"id": 1, "data": initial_data}).execute()
+            return initial_data
+    except Exception as e:
+        print(f"載入 Supabase 資料失敗: {e}")
+        return {"users": [], "orders": [], "posts": [], "services": [], "products": {}}
 
 def save_db(data):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    if not supabase:
+        return
+    try:
+        supabase.table("app_data").upsert({"id": 1, "data": data}).execute()
+    except Exception as e:
+        print(f"儲存至 Supabase 失敗: {e}")
 
 def login_required(view):
     @wraps(view)
@@ -92,6 +121,22 @@ def is_paypal_url(value):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# --- 圖片上傳路由（透過 Cloudinary） ---
+@app.route('/api/upload-image', methods=['POST'])
+@admin_required
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({"message": "沒有上傳檔案"}), 400
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({"message": "沒有選擇檔案"}), 400
+    try:
+        upload_result = cloudinary.uploader.upload(file)
+        image_url = upload_result.get("secure_url")
+        return jsonify({"status": "success", "url": image_url})
+    except Exception as e:
+        return jsonify({"message": f"上傳失敗：{str(e)}"}), 500
 
 # --- API 路由 ---
 
@@ -186,7 +231,7 @@ def handle_products(category):
             product.pop('paypalUrl', None)
     if request.method == 'POST':
         db['products'][category].append(product)
-    elif request.method == 'PUT': # 編輯
+    elif request.method == 'PUT':
         idx = data.get('index')
         if not isinstance(idx, int) or isinstance(idx, bool) or not 0 <= idx < len(db['products'][category]):
             return jsonify({"message": "商品不存在"}), 404
@@ -294,50 +339,7 @@ def my_orders():
     orders = load_db()['orders']
     return jsonify([order for order in orders if order.get('buyer') == session['user']])
 
-@app.route('/api/cart/checkout', methods=['POST'])
-@login_required
-def checkout_cart():
-    body = request.get_json(silent=True) or {}
-    requested_items = body.get('items')
-    mc_id = str(body.get('mcId', '')).strip()[:64]
-    if not isinstance(requested_items, list) or not requested_items or len(requested_items) > 20:
-        return jsonify({"message": "購物車需包含 1 到 20 項商品"}), 400
-    with DB_LOCK:
-        db = load_db()
-        validated = []
-        needs_mc_id = False
-        for entry in requested_items:
-            if not isinstance(entry, dict):
-                return jsonify({"message": "購物車資料格式錯誤"}), 400
-            category, index = entry.get('category'), entry.get('index')
-            if not isinstance(category, str) or not isinstance(index, int) or isinstance(index, bool):
-                return jsonify({"message": "購物車商品資料錯誤"}), 400
-            products = db.get('products', {}).get(category, [])
-            if not 0 <= index < len(products):
-                return jsonify({"message": "商品已不存在，請更新購物車"}), 409
-            product = products[index]
-            if entry.get('name') != product.get('name') or entry.get('price') != product.get('price'):
-                return jsonify({"message": "商品資料已更新，請更新購物車後再送出"}), 409
-            needs_mc_id = needs_mc_id or category.startswith('mc-')
-            validated.append((product, category))
-        if needs_mc_id and not mc_id:
-            return jsonify({"message": "Minecraft 商品請填寫遊戲 ID"}), 400
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M")
-        for product, category in validated:
-            db['orders'].append({
-                "buyer": session['user'],
-                "mcId": mc_id if category.startswith('mc-') else f"(一般會員: {session['user']})",
-                "itemName": product.get('name', ''),
-                "price": product.get('price', ''),
-                "status": "待付款",
-                "fulfillmentStatus": "待處理",
-                "time": created_at,
-            })
-        save_db(db)
-    return jsonify({"status": "success", "count": len(validated)}), 201
-
 # --- PayPal ---
-
 def paypal_token():
     r = requests.post(f"{PAYPAL_API}/v1/oauth2/token", data={"grant_type": "client_credentials"},
                       auth=(PAYPAL_CLIENT_ID, PAYPAL_SECRET), timeout=15)
@@ -348,103 +350,6 @@ def paypal_token():
 def paypal_config():
     return jsonify({"enabled": bool(PAYPAL_CLIENT_ID and PAYPAL_SECRET),
                     "clientId": PAYPAL_CLIENT_ID, "currency": PAYPAL_CURRENCY})
-
-@app.route('/api/paypal/create-order', methods=['POST'])
-@login_required
-def paypal_create_order():
-    if not (PAYPAL_CLIENT_ID and PAYPAL_SECRET):
-        return jsonify({"message": "PayPal 尚未設定"}), 503
-    body = request.json or {}
-    category, index = body.get('category'), body.get('index')
-    items = load_db()['products'].get(category, [])
-    if not isinstance(index, int) or isinstance(index, bool) or not 0 <= index < len(items):
-        return jsonify({"message": "商品不存在"}), 404
-    item = items[index]
-    try:
-        amount = Decimal(str(item.get('paypalPrice', ''))).quantize(Decimal('0.01'))
-        if amount <= 0:
-            raise InvalidOperation
-    except InvalidOperation:
-        return jsonify({"message": "此商品不支援 PayPal 付款"}), 400
-    mc_id = str(body.get('mcId', '')).strip()[:64]
-    if category.startswith('mc-') and not mc_id:
-        return jsonify({"message": "Minecraft 商品請填寫遊戲 ID"}), 400
-    try:
-        r = requests.post(f"{PAYPAL_API}/v2/checkout/orders",
-                          headers={"Authorization": f"Bearer {paypal_token()}"},
-                          json={"intent": "CAPTURE", "purchase_units": [{
-                              "description": item['name'][:127],
-                              "amount": {"currency_code": PAYPAL_CURRENCY, "value": str(amount)}}]},
-                          timeout=15)
-        r.raise_for_status()
-    except requests.RequestException:
-        return jsonify({"message": "無法連線 PayPal"}), 502
-    order_id = r.json()["id"]
-    PENDING_PAYPAL[order_id] = {
-        "buyer": session['user'],
-        "orders": [{"mcId": mc_id or f"(一般會員: {session['user']})", "itemName": item['name'],
-                    "price": f"{amount} {PAYPAL_CURRENCY}"}],
-    }
-    return jsonify({"id": order_id})
-
-@app.route('/api/paypal/create-cart-order', methods=['POST'])
-@login_required
-def paypal_create_cart_order():
-    if not (PAYPAL_CLIENT_ID and PAYPAL_SECRET):
-        return jsonify({"message": "PayPal 尚未設定"}), 503
-    body = request.get_json(silent=True) or {}
-    requested_items = body.get('items')
-    mc_id = str(body.get('mcId', '')).strip()[:64]
-    if not isinstance(requested_items, list) or not requested_items or len(requested_items) > 20:
-        return jsonify({"message": "購物車需包含 1 到 20 件商品"}), 400
-    if sum(entry.get('quantity', 1) for entry in requested_items if isinstance(entry, dict) and isinstance(entry.get('quantity', 1), int)) > 20:
-        return jsonify({"message": "購物車最多 20 件商品"}), 400
-    db = load_db()
-    validated = []
-    paypal_items = []
-    total = Decimal('0.00')
-    for entry in requested_items:
-        if not isinstance(entry, dict):
-            return jsonify({"message": "購物車資料格式錯誤"}), 400
-        category, index, quantity = entry.get('category'), entry.get('index'), entry.get('quantity', 1)
-        if (not isinstance(category, str) or not isinstance(index, int) or isinstance(index, bool)
-                or not isinstance(quantity, int) or isinstance(quantity, bool) or not 1 <= quantity <= 20):
-            return jsonify({"message": "購物車商品資料錯誤"}), 400
-        products = db.get('products', {}).get(category, [])
-        if not 0 <= index < len(products):
-            return jsonify({"message": "商品已不存在，請更新購物車"}), 409
-        product = products[index]
-        if entry.get('name') != product.get('name') or entry.get('price') != product.get('price'):
-            return jsonify({"message": "商品資料已更新，請更新購物車後再送出"}), 409
-        try:
-            amount = Decimal(str(product.get('paypalPrice', ''))).quantize(Decimal('0.01'))
-            if amount <= 0:
-                raise InvalidOperation
-        except InvalidOperation:
-            return jsonify({"message": "購物車商品尚未設定 PayPal 價格"}), 400
-        total += amount * quantity
-        paypal_items.append({
-            "name": product['name'][:127],
-            "quantity": str(quantity),
-            "unit_amount": {"currency_code": PAYPAL_CURRENCY, "value": str(amount)},
-        })
-        validated.extend([{"itemName": product['name'], "mcId": mc_id if category.startswith('mc-') else f"(一般會員: {session['user']})",
-                           "price": f"{amount} {PAYPAL_CURRENCY}"}] * quantity)
-    if any(item.startswith('mc-') for item in [entry['category'] for entry in requested_items]) and not mc_id:
-        return jsonify({"message": "Minecraft 商品請填寫遊戲 ID"}), 400
-    try:
-        r = requests.post(f"{PAYPAL_API}/v2/checkout/orders",
-                          headers={"Authorization": f"Bearer {paypal_token()}"},
-                          json={"intent": "CAPTURE", "purchase_units": [{
-                              "items": paypal_items,
-                              "amount": {"currency_code": PAYPAL_CURRENCY, "value": str(total),
-                                         "breakdown": {"item_total": {"currency_code": PAYPAL_CURRENCY, "value": str(total)}}}}]},
-                          timeout=15)
-        r.raise_for_status()
-    except requests.RequestException:
-        return jsonify({"message": "無法連線 PayPal"}), 502
-    PENDING_PAYPAL[r.json()["id"]] = {"buyer": session['user'], "orders": validated}
-    return jsonify({"id": r.json()["id"]})
 
 @app.route('/api/paypal/capture-order', methods=['POST'])
 @login_required
@@ -464,20 +369,17 @@ def paypal_capture_order():
     if r.json().get("status") != "COMPLETED":
         return jsonify({"message": "付款未完成"}), 400
     PENDING_PAYPAL.pop(order_id, None)
-    with DB_LOCK:
-        db = load_db()
-        for order in pending['orders']:
-            db['orders'].append({**order, "buyer": pending['buyer'], "status": "已付款 (PayPal)",
-                                 "fulfillmentStatus": "待處理", "paypalId": order_id,
-                                 "time": datetime.now().strftime("%Y-%m-%d %H:%M")})
-        save_db(db)
-    PENDING_PAYPAL.pop(order_id, None)
+    db = load_db()
+    for order in pending['orders']:
+        db['orders'].append({**order, "buyer": pending['buyer'], "status": "已付款 (PayPal)",
+                             "fulfillmentStatus": "待處理", "paypalId": order_id,
+                             "time": datetime.now().strftime("%Y-%m-%d %H:%M")})
+    save_db(db)
     return jsonify({"status": "success"})
 
 if __name__ == '__main__':
-    load_db()
     app.run(
         host=os.environ.get('HOST', '0.0.0.0'),
-        port=int(os.environ.get('PORT', '80')),
+        port=int(os.environ.get('PORT', '8000')),
         debug=os.environ.get('FLASK_DEBUG', '').lower() == 'true',
     )
